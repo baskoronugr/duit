@@ -1,0 +1,26 @@
+# Secrets & env
+.env
+.env.*
+*.key
+*.pem
+secrets/
+**/service-account*.json
+
+# Dependencies / build (for when the app is added)
+node_modules/
+dist/
+build/
+.vite/
+coverage/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
