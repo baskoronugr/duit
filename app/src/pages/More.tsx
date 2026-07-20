@@ -62,18 +62,18 @@ export function More() {
         </button>
       </Surface>
 
-      <Surface className="mt-4">
-        <div className="flex items-center gap-3">
+      <Link to="/settings">
+        <Surface className="mt-4 flex items-center gap-3">
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
             style={{ background: 'var(--surface-2)', color: 'var(--text-2)' }}
           >
             <Settings size={18} strokeWidth={1.8} />
           </div>
-          <div className="flex-1 text-[13.5px] font-semibold">Settings</div>
+          <div className="flex-1 text-[13.5px] font-semibold">Accounts &amp; cards</div>
           <ChevronRight size={16} color="var(--text-3)" />
-        </div>
-      </Surface>
+        </Surface>
+      </Link>
     </Screen>
   )
 }

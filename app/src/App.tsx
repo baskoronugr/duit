@@ -20,12 +20,16 @@ import { AddTransfer } from './pages/add/AddTransfer'
 import { AddSubscription } from './pages/add/AddSubscription'
 import { AddGoal } from './pages/add/AddGoal'
 import { AddBudget } from './pages/add/AddBudget'
+import { Summary } from './pages/Summary'
+import { Settings } from './pages/Settings'
 
 export default function App() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/summary" element={<Summary />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/add" element={<AddHub />} />
         <Route path="/add/expense" element={<QuickAdd />} />
         <Route path="/add/income" element={<AddIncome />} />

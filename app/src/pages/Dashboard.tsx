@@ -1,15 +1,30 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Camera, Repeat, MoreHorizontal, ShoppingCart, Coffee, Car, TrendingUp, Wallet, Landmark, CreditCard } from 'lucide-react'
+import { Plus, Camera, Repeat, MoreHorizontal, ShoppingCart, Coffee, Car, TrendingUp, Wallet, Landmark, CreditCard, BarChart3 } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
-import { TopBar, Greeting } from '../components/TopBar'
+import { ProfileHeader } from '../components/ProfileHeader'
 import { OwnerFilter, type Owner } from '../components/OwnerFilter'
 import { Carousel } from '../components/Carousel'
 import { GradientProgressBar, ProgressBar } from '../components/ProgressBar'
 import { DonutRing } from '../components/DonutRing'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { formatAmount } from '../data/currency'
-import { members, netWorth, monthlySpending, accounts, goals, portfolio, transactions, subscriptions, cashOnHand, debtTotal } from '../data/mockData'
+import { useProfile } from '../theme/ProfileContext'
+import { netWorth, monthlySpending, accounts, goals, portfolio, transactions, subscriptions, cashOnHand, debtTotal } from '../data/mockData'
+
+function Hidden({ children, revealed }: { children: React.ReactNode; revealed: boolean }) {
+  return (
+    <span
+      style={{
+        filter: revealed ? 'none' : 'blur(9px)',
+        transition: 'filter .2s',
+        userSelect: revealed ? 'auto' : 'none',
+      }}
+    >
+      {children}
+    </span>
+  )
+}
 
 const atRisk = [
   { name: 'Dining', percent: 92, color: '#F59E0B', icon: Coffee, note: null },
@@ -25,6 +40,7 @@ const quickActions = [
 
 export function Dashboard() {
   const [owner, setOwner] = useState<Owner>('All')
+  const [revealed, setRevealed] = useState(false)
   const card = accounts.find((a) => a.type === 'credit_card')!
   const trendPoints = monthlySpending.trend
     .map((v, i) => `${(i / (monthlySpending.trend.length - 1)) * 100},${20 - v}`)
@@ -34,12 +50,11 @@ export function Dashboard() {
     <Screen>
       {/* --- Mobile layout --- */}
       <div className="lg:hidden">
-        <TopBar avatarInitial={members.me.initial} />
-        <Greeting name={members.me.name} />
+        <ProfileHeader revealed={revealed} onToggleReveal={() => setRevealed((r) => !r)} />
         <OwnerFilter value={owner} onChange={setOwner} />
 
         <div className="mt-5">
-          <HeroCarousel />
+          <HeroCarousel revealed={revealed} />
         </div>
 
         <div className="mt-5 flex justify-between px-1.5">
@@ -127,11 +142,33 @@ export function Dashboard() {
         </Link>
 
         <RecentTransactionsCard />
+
+        <Link
+          to="/summary"
+          className="mt-4 flex items-center gap-3 rounded-[20px] border p-4"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+        >
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+            style={{ background: 'rgba(180,76,246,.16)', color: 'var(--accent-link)' }}
+          >
+            <BarChart3 size={20} strokeWidth={1.9} />
+          </div>
+          <div className="flex-1">
+            <div className="text-[13.5px] font-bold">Full financial breakdown</div>
+            <div className="text-[11.5px]" style={{ color: 'var(--text-3)' }}>
+              Every metric in one place — net worth, cash, budgets, goals
+            </div>
+          </div>
+          <div className="text-[18px]" style={{ color: 'var(--text-3)' }}>
+            →
+          </div>
+        </Link>
       </div>
 
       {/* --- Desktop 3-column reflow --- */}
       <div className="hidden lg:block">
-        <DesktopDashboard owner={owner} setOwner={setOwner} trendPoints={trendPoints} card={card} />
+        <DesktopDashboard owner={owner} setOwner={setOwner} trendPoints={trendPoints} card={card} revealed={revealed} />
       </div>
     </Screen>
   )
@@ -143,12 +180,12 @@ interface HeroSlideProps {
   sub: string
   footLabel: string
   badge: string
-  badgeColor?: string
   gradient: string
   icon: typeof Wallet
+  revealed: boolean
 }
 
-function HeroSlide({ label, amount, sub, footLabel, badge, gradient, icon: Icon }: HeroSlideProps) {
+function HeroSlide({ label, amount, sub, footLabel, badge, gradient, icon: Icon, revealed }: HeroSlideProps) {
   return (
     <div
       className="rounded-[24px] p-5 shadow-[0_16px_40px_rgba(124,58,237,0.28)]"
@@ -160,24 +197,27 @@ function HeroSlide({ label, amount, sub, footLabel, badge, gradient, icon: Icon 
           <Icon size={14} strokeWidth={2} color="#fff" />
         </div>
       </div>
-      <div className="mt-2.5 text-[32px] font-extrabold tracking-[-0.5px] text-white tnum">{amount}</div>
+      <div className="mt-2.5 text-[32px] font-extrabold tracking-[-0.5px] text-white tnum">
+        <Hidden revealed={revealed}>{amount}</Hidden>
+      </div>
       <div className="mt-1 text-[11px] tnum text-white/75">{sub}</div>
       <div className="mt-4 flex items-center justify-between">
         <div className="text-[11.5px] text-white/80">{footLabel}</div>
         <div className="rounded-full px-3.5 py-1.5 text-[11.5px] font-bold tnum" style={{ background: '#F5F5F7', color: '#111114' }}>
-          {badge}
+          <Hidden revealed={revealed}>{badge}</Hidden>
         </div>
       </div>
     </div>
   )
 }
 
-function HeroCarousel() {
+function HeroCarousel({ revealed }: { revealed: boolean }) {
   return (
     <Carousel>
       {[
         <HeroSlide
           key="nw"
+          revealed={revealed}
           label="Net worth"
           amount={formatAmount(netWorth.idr, 'IDR')}
           sub={`≈ consolidated in IDR · FX ${netWorth.fxDate}`}
@@ -188,6 +228,7 @@ function HeroCarousel() {
         />,
         <HeroSlide
           key="cash"
+          revealed={revealed}
           label="Cash on hand"
           amount={formatAmount(cashOnHand.idr, 'IDR')}
           sub={`liquid across ${cashOnHand.accountsCount} accounts`}
@@ -198,6 +239,7 @@ function HeroCarousel() {
         />,
         <HeroSlide
           key="port"
+          revealed={revealed}
           label="Portfolio"
           amount={`≈ ${formatAmount(portfolio.currentValue, 'IDR')}`}
           sub="gold · stocks · reksadana · crypto"
@@ -208,6 +250,7 @@ function HeroCarousel() {
         />,
         <HeroSlide
           key="debt"
+          revealed={revealed}
           label="Total owed"
           amount={formatAmount(debtTotal.idr, 'IDR')}
           sub="credit cards + loans"
@@ -405,17 +448,20 @@ function DesktopDashboard({
   owner,
   setOwner,
   trendPoints,
+  revealed,
 }: {
   owner: Owner
   setOwner: (o: Owner) => void
   trendPoints: string
   card: (typeof accounts)[number]
+  revealed: boolean
 }) {
+  const { active } = useProfile()
   return (
     <>
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[34px] font-extrabold tracking-[-0.5px]">Hi, {members.me.name}!</div>
+          <div className="text-[34px] font-extrabold tracking-[-0.5px]">Hi, {active}!</div>
           <div className="mt-1 text-sm" style={{ color: 'var(--text-3)' }}>
             Let&rsquo;s manage your money.
           </div>
@@ -427,7 +473,7 @@ function DesktopDashboard({
 
       <div className="mt-6 grid grid-cols-3 gap-5">
         <div className="col-span-1 flex flex-col gap-5">
-          <HeroCarousel />
+          <HeroCarousel revealed={revealed} />
           <AtRiskCard />
         </div>
         <div className="col-span-1 flex flex-col gap-5">
