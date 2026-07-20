@@ -24,3 +24,8 @@ Thumbs.db
 # Supabase local
 supabase/.branches/
 supabase/.temp/
+
+# app build
+app/node_modules/
+app/dist/
+app/dev-dist/
