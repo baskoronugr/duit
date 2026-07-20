@@ -1,13 +1,15 @@
 # PRD — Household Finance App (working name: "Duit")
 
-**Version:** 2.1
-**Date:** 2026-07-19
+**Version:** 3.0
+**Date:** 2026-07-20
 **Owner:** Baskoro Adi Nugroho
 **Status:** Draft for review
 
-> **v2.1 changes** (from v2.0): currencies fixed to **IDR (base), USD, JPY, SGD, CNY** (extensible); added **subscription tracking** (F13); English UI confirmed; **both members' Telegram linked at launch**; launch on the **host's default subdomain** (custom domain optional later); brand/design reference locked (see DESIGN_BRIEF §3 and the reference image/video files).
+> **v3.0 changes** (from v2.1) — **major architecture pivot to local-first + LAN sync (no cloud, no Supabase):** the app now **lives fully offline on each phone** (data in the browser's IndexedDB) and **syncs to a hub on the user's own PC over home WiFi** whenever the PC is on. The PC holds the master database (a local file — free, effectively unlimited storage). Chosen delivery: **PWA installed via a local HTTPS certificate** (`https://duit.local` on the LAN). Supabase/Cloud Auth/Cloud hosting are removed. Owners simplified to **Bas / Tere** (filter All / Bas / Tere; "Joint" dropped). Also: dashboard hero is a swipeable carousel with blurred balances; header profile switch; per-type Add flows; Income, Subscriptions, Full-Breakdown, and Settings (account/card/pocket/e-money management) screens.
 >
-> **v2.0 changes** (from v1.0): added multi-currency, debt tracking, credit cards, monthly/yearly reports + spending recap; budget/savings priorities changed from 3 tiers to **weighted percentages (sum 100%)**; AI provider set to **free Google Gemini for vision + optional Groq for text**; hard **$0/month** goal reaffirmed; security section expanded (standard security, AI opt-in and on).
+> **v2.1 changes** (from v2.0): currencies fixed to **IDR (base), USD, JPY, SGD, CNY** (extensible); added **subscription tracking** (F13); English UI confirmed; **both members' Telegram linked at launch**; brand/design reference locked (see DESIGN_BRIEF §3 and the reference image/video files).
+>
+> **v2.0 changes** (from v1.0): added multi-currency, debt tracking, credit cards, monthly/yearly reports + spending recap; budget/savings priorities changed from 3 tiers to **weighted percentages (sum 100%)**; AI provider set to **free Google Gemini for vision + optional Groq for text**; hard **$0/month** goal reaffirmed.
 
 ---
 
@@ -40,9 +42,9 @@ A personal finance web app for a two-person household (Baskoro + wife). It track
 |---|---|
 | Users | Exactly 2: Baskoro (Android + PC) and wife (iPhone). |
 | Model | **One shared household.** Both users see and can edit all data. |
-| Ownership tag | Every account, transaction, savings goal, and holding carries an owner: `Me`, `Wife`, or `Joint`. A global filter switches any view between All / Me / Wife / Joint. |
-| Auth | Supabase Auth with Google sign-in. An **email allowlist of exactly two addresses**; anyone else is rejected. |
-| Devices | Installable PWA (Add to Home Screen) on Android Chrome, iOS Safari, desktop browsers. |
+| Ownership tag | Every account, transaction, savings goal, and holding carries an owner: `Bas` or `Tere`. A global filter switches any view between **All / Bas / Tere** (there is no "Joint" — "All" is the household view). The app header lets you switch the **active user**, which sets the default owner for new entries. |
+| Auth | **No cloud accounts.** Access is by being on the household's LAN + trusting the household's local certificate; an optional local passcode/biometric lock protects the device. The two people are the only users; there is no sign-up. |
+| Devices | Installable PWA (Add to Home Screen) on Android Chrome, iOS Safari, desktop browsers — installed from the PC hub over HTTPS on the home WiFi. |
 | Language | **English UI**, IDR-style number formatting. |
 | Currencies | **IDR (base), USD, JPY, SGD, CNY** at launch; the list is data-driven so more can be added without code changes. |
 | Telegram | **Both members linked at launch** (each links their own account). |
@@ -50,21 +52,31 @@ A personal finance web app for a two-person household (Baskoro + wife). It track
 
 ---
 
-## 3. Platform & Architecture
+## 3. Platform & Architecture — local-first, LAN sync (no cloud)
+
+The app is **local-first**: every device holds a full copy of the data and works offline. A small server on the household **PC** is the **sync hub and master store**. Nothing is hosted in the cloud.
 
 | Layer | Choice | Why |
 |---|---|---|
-| Frontend | React (Vite) PWA, mobile-first responsive | One codebase for all three device types |
-| Backend / DB | Supabase free tier — Postgres, Auth, Storage, Edge Functions | Free, hosted, real-time sync, row-level security |
-| Web hosting | Cloudflare Pages (or Vercel) free tier | Free static hosting, custom domain optional |
-| Telegram bot | Telegram Bot API webhook → Supabase Edge Function | No server to run |
-| AI | **Provider-agnostic AI layer.** Vision (receipts): **Google Gemini free tier** — the only major free tier with native image understanding. Text (advice/chat): Gemini, optionally routed to **Groq free tier** (fast Llama, generous limits) to spread load. Optional paid Claude API pluggable in Settings for those who want it. | $0 by default |
-| FX rates | IDR↔USD (and any added currency) from a free exchange-rate API (e.g. exchangerate.host / Frankfurter), cached daily, manual override allowed. | Free |
-| Price feeds | Crypto: CoinGecko free API. Gold: public gold-price source with manual override. Stocks/reksadana: manual entry with staleness reminders. | Free feeds only where reliable |
+| Frontend | React (Vite) **PWA**, mobile-first responsive | One codebase for phones + PC web |
+| On-device store | **PouchDB** in the browser (IndexedDB) on each phone/PC | Full offline read/write; battle-tested sync |
+| Sync hub (on PC) | **CouchDB** (or `pouchdb-server`) running on the PC, data in a local file | Free; storage = PC disk (effectively unlimited); bidirectional replication + built-in conflict handling |
+| Transport | **HTTPS over home WiFi** to `https://duit.local:<port>` (PC LAN IP via mDNS), secured by a **locally-generated certificate** (mkcert) whose root CA is installed once on both phones | Secure context is required for PWA install + service worker; enables clean same-origin sync with no mixed-content issues |
+| App delivery | PWA installed to the phone home screen from the PC hub over that HTTPS origin; service worker caches the app shell for offline use | Free, no app stores, no Mac needed |
+| Telegram bot | Runs **on the PC** (long-polling or webhook via a local tunnel) writing into the same CouchDB | Optional; only works while the PC is on |
+| AI | **Provider-agnostic AI layer.** Vision (receipts): **Google Gemini free tier**. Text (advice/chat): Gemini or **Groq free tier**. Optional paid Claude key. Requires internet at call time; degrades gracefully to manual entry when offline. | $0 by default |
+| FX rates | Free exchange-rate API (e.g. exchangerate.host / Frankfurter), cached locally, manual override | Free |
+| Price feeds | Crypto: CoinGecko free API. Gold: public source + manual override. Stocks/reksadana: manual with staleness reminders | Free where reliable |
 
-Sync model: all data lives in Supabase; clients read/write online. v1 requires connectivity to write (offline queue is a possible v2 enhancement).
+### 3.1 Sync model
+- Each phone reads/writes its **local PouchDB** — instant, works with no network.
+- When the phone is on the **home WiFi and the PC is on**, PouchDB **bidirectionally replicates** with the PC's CouchDB. Edits made offline are pushed/pulled and merged on reconnect.
+- The **PC web app** points at the same CouchDB (via `localhost`), so PC and phones always converge.
+- **Conflicts** (both people edited the same record offline) are resolved by CouchDB's revision model; the app surfaces a gentle "which is right?" only for genuine data conflicts (rare at two-user scale).
+- **Hub off / away from home:** phones keep working locally and queue changes; they sync the next time they see the PC. There is **no phone-to-phone sync without the PC** in v1 (accepted trade-off for a no-cloud design).
+- **Backup:** the PC runs a scheduled copy/export of the CouchDB data file (the master) to a second location, so a disk failure can't lose everything.
 
-**Free-tier note:** Google's *free* Gemini tier may use submitted content to improve its models. AI is therefore opt-in per feature and the UI states, at the point of use, that the item is sent to Google. See §7.
+**AI privacy note:** using AI (receipt reading, chat) sends that specific item to Google's *free* Gemini, which may use it to improve models. AI is opt-in per feature with a point-of-use disclosure. Everything else stays on your devices + your PC; nothing leaves the LAN. See §7.
 
 ---
 
@@ -175,22 +187,22 @@ A single internal interface with three operations:
 2. `suggest_rebalance(budget_state)` → proposal JSON (weight-aware). Has a **deterministic non-AI fallback**.
 3. `answer_question(question, data_context)` → text.
 
-Implementations: **Gemini** (default; free tier, includes vision — used for operation 1 and, if desired, 2–3), **Groq** (optional, free; text-only, for operations 2–3), and **Claude** (optional; requires user-supplied API key stored server-side). Provider + keys configurable in Settings. If no provider is configured, F3/F7/F8 gracefully degrade (manual entry works everywhere; F7 uses its deterministic fallback).
+Implementations: **Gemini** (default; free tier, includes vision), **Groq** (optional, free; text-only), and **Claude** (optional; user-supplied key). Keys are stored **on the PC hub**, never shipped to phones. AI calls are proxied through the PC hub when it's reachable; if no provider is configured or the app is offline, F3/F7/F8 gracefully degrade (manual entry works everywhere; F7 uses its deterministic fallback).
 
 ---
 
 ## 7. Security & Privacy
 
-**Chosen posture (v1): standard security, AI on.** Strong protection against other users and outside attackers; the hosting provider can technically read the database (true for any free hosted service). Acceptable for this household; a client-side encrypted "vault" for the most sensitive fields is a possible later add-on.
+**Chosen posture (v3): local-first, nothing in the cloud.** All data lives on your two phones and your PC. There is **no cloud database and no third party** that can read it — the strongest possible privacy for a free setup. The main exposure surface is (a) your home LAN and (b) whatever you explicitly send to AI.
 
-- **Auth:** Supabase Auth (Google sign-in) with an **email allowlist of exactly two addresses**; all others rejected.
-- **Row-Level Security:** every row scoped to the household; only the two allowlisted members can read/write.
-- **Transport & storage:** HTTPS everywhere; database and storage encrypted at rest by the provider. Receipt images in a **private** storage bucket (short-lived signed URLs, never public).
-- **Telegram:** webhook validates Telegram's secret token and the two linked chat IDs; all other senders ignored.
-- **Secrets:** API keys (Gemini/Groq/Claude/CoinGecko/FX) live in Edge Function secrets, never shipped to the browser.
+- **No cloud accounts / no sign-up.** Access requires being on the household LAN and having the household's local certificate trusted. An optional per-device passcode/biometric lock guards a lost/borrowed phone.
+- **Data at rest:** lives in each device's local store and the PC's CouchDB file. Recommend enabling OS disk encryption on the PC (BitLocker) and device lock on phones.
+- **Transport:** HTTPS on the LAN via a **locally-generated certificate** (mkcert). The root CA is installed once on each phone; no traffic leaves the home network for sync.
+- **Telegram (optional):** the bot runs on the PC and only accepts the two linked chat IDs; only active while the PC is on.
+- **Secrets:** AI/FX/price API keys live **only on the PC hub**, never on phones.
 - **No banking credentials:** the app never connects to real bank/card accounts; nothing that could move money is stored.
-- **AI data disclosure (important):** the *free* Gemini tier may use submitted content to improve Google's models. AI is **opt-in per feature** and the UI states, at the point of use, that the specific image/text is sent to Google. Turning AI off (or using a paid provider) avoids this; manual entry never sends anything externally.
-- **What "totally secret even from the host" would require (not in v1):** client-side end-to-end encryption with a household passphrase; this would disable server-side AI, search, and some reports. Documented here as a deliberate trade-off the user chose against for v1.
+- **AI is the one thing that leaves the LAN:** using AI sends that specific image/text to Google's *free* Gemini (which may train on it). AI is **opt-in per feature** with a point-of-use disclosure. Off by choice, or use a paid provider, to avoid it. Manual entry never sends anything.
+- **Backups are your responsibility (automated):** because there is no cloud, the PC's master DB is auto-copied to a second location on a schedule; a periodic encrypted export can also go to a USB drive or personal cloud folder if desired.
 
 ---
 
@@ -198,13 +210,13 @@ Implementations: **Gemini** (default; free tier, includes vision — used for op
 
 | Milestone | Scope | Gate |
 |---|---|---|
-| **M0 — Foundation** | Supabase project, schema + RLS, Google sign-in with 2-email allowlist, PWA shell deployed | Both users can log in on their own devices |
-| **M1 — Core money** | Multi-currency accounts/pockets + **credit cards**, manual expenses/income/transfers, categories, transaction list, dashboard v1 with spending recap | A week of real household use, balances correct |
+| **M0 — Local hub & sync** | CouchDB (or pouchdb-server) on the PC; mkcert cert + `duit.local` HTTPS on the LAN; PouchDB in the app with bidirectional replication; PWA installs on both phones; automated PC backup of the master DB | Both phones install the app, work offline, and converge with the PC after edits |
+| **M1 — Core money** | Data schema (CouchDB docs) for multi-currency accounts/pockets + **credit cards**, manual expenses/income/transfers, categories, transaction list, dashboard with spending recap — all reading/writing local PouchDB | A week of real household use offline; balances correct; edits on both phones merge |
 | **M2 — Budgets, goals & subscriptions** | Monthly budgets with **weighted (%) priorities**, savings goals + weighted split + contributions, recurring transactions, **subscriptions view + upcoming renewals** | Month rollover works; weights sum to 100; goals show correct progress; a subscription auto-posts on renewal |
 | **M3 — Debts & reports** | Debts/receivables + credit-card payment flows; **monthly report + yearly view**; net worth | Net worth correct; monthly/yearly figures reconcile |
 | **M4 — Investments** | Holdings, lots, price feeds (crypto/gold auto, manual others), multi-currency portfolio gain view, FX rates | Gain % matches manual calculation across currencies |
-| **M5 — AI capture** | Screenshot/receipt extraction with review screen (Gemini) | 8/10 receipts extracted correctly on first pass |
-| **M6 — Telegram** | Bot linking, text entry, photo entry with confirm buttons | Expense logged from Telegram in one message |
+| **M5 — AI capture** | Screenshot/receipt extraction with review screen (Gemini), proxied through the PC hub | 8/10 receipts extracted correctly on first pass |
+| **M6 — Telegram** | Bot on the PC; linking, text entry, photo entry with confirm buttons | Expense logged from Telegram in one message while PC is on |
 | **M7 — AI advisor** | Weight-driven budget reprioritization (with deterministic fallback) + Q&A chat; Groq/Claude optional providers | Useful proposal generated on real data |
 
 ---
@@ -213,14 +225,15 @@ Implementations: **Gemini** (default; free tier, includes vision — used for op
 
 | Item | Cost |
 |---|---|
-| Supabase free tier (500MB DB, 1GB storage, Edge Functions) | Rp 0 |
-| Cloudflare Pages / Vercel hosting | Rp 0 |
+| CouchDB / pouchdb-server on the PC (data on local disk) | Rp 0 — storage limited only by PC disk |
+| mkcert local certificate + `duit.local` HTTPS on LAN | Rp 0 |
+| PWA (no app stores, no hosting) | Rp 0 |
 | Telegram Bot API | Rp 0 |
 | Gemini free tier (vision) / Groq free tier (text) | Rp 0 |
 | CoinGecko + FX-rate free APIs | Rp 0 |
 | **Optional** Claude API (only if the user enables it) | pay-per-use, est. < $2/month |
 
-**Total to run as specified: Rp 0/month** (the hard requirement). Claude is the only paid option and is off by default.
+**Total to run as specified: Rp 0/month** and **no storage cap** (it's your own disk). Claude is the only paid option and is off by default. The only prerequisite is a PC you already own being on to sync.
 
 ---
 
@@ -228,29 +241,36 @@ Implementations: **Gemini** (default; free tier, includes vision — used for op
 
 | Risk | Mitigation |
 |---|---|
-| Free-tier terms change | Standard Postgres + open stack; data exports cleanly and moves anywhere |
+| **PC off / away from home → no sync** | Phones stay fully usable offline and queue changes; they merge next time the PC is reachable. Inherent to a no-cloud design; accepted by user. |
+| **PC disk fails → data loss (no cloud safety net)** | Automated scheduled backup of the CouchDB file to a 2nd location; optional periodic encrypted export to USB/personal cloud. |
+| **iOS PWA storage eviction** (clears IndexedDB after ~7 days unused) | Data also lives on the PC hub + the other phone, so an evicted phone re-syncs everything; regular use avoids eviction anyway. |
+| **Local certificate / `duit.local` setup friction** | One-time guided setup; fallback to the PC's LAN IP if mDNS misbehaves; documented step-by-step in M0. |
+| **Two people edit the same record offline** | CouchDB revision-based conflict handling; app surfaces a simple "keep which?" only for real conflicts. |
 | AI misreads receipts | Mandatory review-before-save screen; manual entry always available |
-| Stock/reksadana prices go stale | Staleness badges + gentle reminders; 30-second manual update flow |
-| iOS PWA limitations (notifications, storage eviction) | Core flows don't depend on push; data is server-side so eviction loses nothing |
-| Supabase project pauses after inactivity (free tier) | Weekly scheduled keep-alive ping; household use itself is regular activity |
-| Gemini free tier trains on submitted data | AI opt-in per feature with a clear disclosure at point of use; manual entry sends nothing; paid provider available |
-| Gemini free rate limits (were cut in late 2025) | Low personal volume stays within limits; route text to Groq; queue/retry on 429 |
-| FX/gold price source unreliable | Cache last good rate; manual override; staleness badge |
-| Multi-currency rounding/consolidation errors | Store native amount + captured FX rate per transaction; compute base-currency totals from stored rates, not live re-conversion |
+| Gemini free tier trains on submitted data | AI opt-in per feature with point-of-use disclosure; manual entry sends nothing; paid provider available |
+| FX/price source unreliable or offline | Cache last good rate locally; manual override; staleness badge |
+| Multi-currency rounding/consolidation errors | Store native amount + captured FX rate per transaction; compute base-currency totals from stored rates |
 
 ---
 
 ## 11. Resolved Decisions & Open Questions
 
+**Resolved (20 Jul 2026 — v3 architecture):**
+- **Local-first, no cloud.** App lives offline on both phones; **PC is the sync hub + master store** (CouchDB on local disk). No Supabase, no cloud hosting. Free, storage = PC disk.
+- **Delivery: PWA + local HTTPS certificate** (mkcert, `duit.local` on the home WiFi) — installs to the phone home screen, no app stores, no Mac. (Native/Capacitor considered and rejected for iPhone-install friction; plain-HTTP rejected as too weak for offline.)
+- Sync is **hub-based**: phones sync only when the PC is on and on the same WiFi; no phone-to-phone sync in v1. Automated PC backup of the master DB.
+- Owners: **Bas / Tere** only; filter **All / Bas / Tere** ("Joint" removed).
+
 **Resolved (19 Jul 2026):**
 - Language: **English UI**.
-- Currencies at launch: **IDR (base), USD, JPY, SGD, CNY**; data-driven so more can be added. Note: JPY has **no minor units** (whole yen); formatting is per-currency (IDR/JPY no decimals, USD/SGD/CNY 2 decimals).
-- Telegram: **both members linked at launch**.
-- Domain: **host's default subdomain** at launch; custom domain optional later.
+- Currencies at launch: **IDR (base), USD, JPY, SGD, CNY**; data-driven. Per-currency formatting (IDR/JPY no decimals, USD/SGD/CNY 2 decimals).
+- Telegram: **both members linked at launch** (bot runs on the PC).
 - Credit cards: track **balance / limit / due date** in v1 (statement itemization deferred).
 - **Subscriptions** added as F13.
-- Design: follow the locked brand reference (DESIGN_BRIEF §3; reference image + video in the project folder).
+- Design: follow the locked brand reference (DESIGN_BRIEF §3).
 
 **Still open:**
 1. Any currencies to add beyond the five above?
-2. Should the AI reprioritization also consider upcoming subscription renewals when protecting goals? (Assumed: yes, treat known upcoming subscriptions as committed spend.)
+2. Should AI reprioritization also treat upcoming subscription renewals as committed spend? (Assumed: yes.)
+3. **PC OS for the hub** — Windows (per current machine)? Confirms exact setup steps (CouchDB Windows service + mkcert + firewall rule for the LAN port).
+4. Where should the **automated backup** copy go (2nd drive, USB, or a personal cloud folder)?

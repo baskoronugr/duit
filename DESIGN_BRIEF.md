@@ -2,7 +2,9 @@
 
 **For:** UI design (Claude design session)
 **Companion doc:** `PRD.md` v2.0 — the PRD defines *what* the app does; this brief defines *how it should look and feel*. Where they conflict, the PRD wins on functionality.
-**Aligned to PRD v2.0:** multi-currency (IDR+USD), credit cards & debts, weighted-% budget/goal priorities, monthly/yearly reports + spending recap.
+**Aligned to PRD v3.0:** local-first (offline on phones, syncs to PC over WiFi); multi-currency (IDR/USD/JPY/SGD/CNY), credit cards & debts, weighted-% budget/goal priorities, reports + spending recap.
+
+**v3 UI additions (built):** dashboard header is a **tappable profile switch** (Hi, Bas! / Tere) — no avatar/bell chrome — with guiding copy; **hero is a swipeable carousel** (Net worth / Cash / Portfolio / Debt) whose **amounts are privacy-blurred by default** with an eye toggle; **Full Breakdown** screen (all metrics consolidated); **Settings → Accounts & cards** to create/name banks, cards, pockets, e-money, cash; per-type **Add hub** flows. Owners are **Bas / Tere** (filter All/Bas/Tere).
 
 ---
 
