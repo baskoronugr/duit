@@ -21,25 +21,25 @@ const groups: { label: string; total: string; rows: Row[] }[] = [
     label: 'Today · Sat 19 Jul',
     total: '−Rp 225.500',
     rows: [
-      { merchant: 'Superindo', detail: 'Groceries · BCA Utama · scan · J', amount: '−Rp 187.500', amountColor: '#F87171', icon: ShoppingCart, color: '#2DD4BF' },
-      { merchant: 'Kopi Kenangan', detail: 'Dining · GoPay · telegram · N', amount: '−Rp 38.000', amountColor: '#F87171', icon: Coffee, color: '#60A5FA' },
+      { merchant: 'Superindo', detail: 'Groceries · BCA Utama · scan · Bas', amount: '−Rp 187.500', amountColor: '#F87171', icon: ShoppingCart, color: '#2DD4BF' },
+      { merchant: 'Kopi Kenangan', detail: 'Dining · GoPay · telegram · Tere', amount: '−Rp 38.000', amountColor: '#F87171', icon: Coffee, color: '#60A5FA' },
     ],
   },
   {
     label: 'Fri 18 Jul',
     total: '+Rp 28.148.200',
     rows: [
-      { merchant: 'Salary', detail: 'Income · BCA Utama · A', amount: '+Rp 28.500.000', amountColor: '#34D399', icon: TrendingUp, color: '#34D399' },
-      { merchant: 'To Darurat pocket', detail: 'Transfer · BCA → Darurat · A', amount: 'Rp 3.000.000', amountColor: 'var(--text-2)', icon: Repeat, color: '#A78BFA' },
-      { merchant: 'Ichiran Ramen', detail: 'Dining · Jenius · N', amount: '−¥2.180', amountColor: '#F87171', icon: Coffee, color: '#60A5FA', fx: '≈ Rp 231.800' },
+      { merchant: 'Salary', detail: 'Income · BCA Utama · Bas', amount: '+Rp 28.500.000', amountColor: '#34D399', icon: TrendingUp, color: '#34D399' },
+      { merchant: 'To Darurat pocket', detail: 'Transfer · BCA → Darurat · Bas', amount: 'Rp 3.000.000', amountColor: 'var(--text-2)', icon: Repeat, color: '#A78BFA' },
+      { merchant: 'Ichiran Ramen', detail: 'Dining · Jenius · Tere', amount: '−¥2.180', amountColor: '#F87171', icon: Coffee, color: '#60A5FA', fx: '≈ Rp 231.800' },
     ],
   },
   {
     label: 'Thu 17 Jul',
     total: '−Rp 1.494.000',
     rows: [
-      { merchant: 'PLN Token', detail: 'Utilities · BCA Utama · J', amount: '−Rp 502.000', amountColor: '#F87171', icon: Zap, color: '#FB923C' },
-      { merchant: 'Grab · airport', detail: 'Transport · BCA Visa · A', amount: '−Rp 992.000', amountColor: '#F87171', icon: Car, color: '#F472B6' },
+      { merchant: 'PLN Token', detail: 'Utilities · BCA Utama · Bas', amount: '−Rp 502.000', amountColor: '#F87171', icon: Zap, color: '#FB923C' },
+      { merchant: 'Grab · airport', detail: 'Transport · BCA Visa · Bas', amount: '−Rp 992.000', amountColor: '#F87171', icon: Car, color: '#F472B6' },
     ],
   },
 ]

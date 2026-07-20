@@ -42,7 +42,7 @@ export function BottomNav() {
         </NavLink>
       ))}
       <NavLink
-        to="/quick-add"
+        to="/add"
         className="flex h-[50px] w-[50px] items-center justify-center rounded-full shadow-[0_8px_20px_rgba(124,58,237,0.45)]"
         style={{ background: 'linear-gradient(140deg,#B44CF6,#7C3AED)' }}
       >

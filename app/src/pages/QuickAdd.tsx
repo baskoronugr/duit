@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   X,
+  ArrowLeft,
   Delete,
   ShoppingCart,
   Coffee,
@@ -13,7 +14,7 @@ import {
   MoreHorizontal,
   Camera,
 } from 'lucide-react'
-import { Screen, Surface } from '../components/Screen'
+import { Screen } from '../components/Screen'
 import { parseShorthandAmount, formatAmount } from '../data/currency'
 import { members, accounts } from '../data/mockData'
 
@@ -28,10 +29,9 @@ const categories = [
 ]
 
 const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'k', '0', 'back']
-const types = ['Expense', 'Income', 'Transfer'] as const
 
 export function QuickAdd() {
-  const [type, setType] = useState<(typeof types)[number]>('Expense')
+  const navigate = useNavigate()
   const [raw, setRaw] = useState('45k')
   const [category, setCategory] = useState('Groceries')
   const [account, setAccount] = useState('BCA Utama')
@@ -50,7 +50,15 @@ export function QuickAdd() {
   return (
     <Screen>
       <div className="flex items-center justify-between">
-        <div className="text-[18px] font-extrabold">Add</div>
+        <Link to="/add">
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded-full border"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+          >
+            <ArrowLeft size={18} strokeWidth={2} />
+          </div>
+        </Link>
+        <div className="text-[16px] font-extrabold">Expense</div>
         <Link to="/">
           <div
             className="flex h-11 w-11 items-center justify-center rounded-full border"
@@ -59,26 +67,6 @@ export function QuickAdd() {
             <X size={17} strokeWidth={2} />
           </div>
         </Link>
-      </div>
-
-      <div
-        className="mt-3.5 flex gap-[2px] rounded-full border p-1"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-      >
-        {types.map((t) => (
-          <button
-            key={t}
-            onClick={() => setType(t)}
-            className="flex-1 rounded-full py-2.5 text-[12.5px]"
-            style={
-              t === type
-                ? { background: 'linear-gradient(140deg,#B44CF6,#7C3AED)', fontWeight: 700, color: '#fff' }
-                : { color: 'var(--text-3)', fontWeight: 500 }
-            }
-          >
-            {t}
-          </button>
-        ))}
       </div>
 
       <div className="mt-6 text-center">
@@ -204,18 +192,13 @@ export function QuickAdd() {
             <Camera size={20} strokeWidth={1.8} />
           </div>
         </Link>
-        <Surface
-          className="flex flex-1 items-center justify-center !p-0"
-          padded={false}
+        <button
+          onClick={() => navigate('/transactions')}
+          className="flex h-14 flex-1 items-center justify-center rounded-full text-[15px] font-bold text-white shadow-[0_10px_26px_rgba(124,58,237,0.4)]"
+          style={{ background: 'linear-gradient(140deg,#B44CF6,#7C3AED)' }}
         >
-          <Link
-            to="/"
-            className="flex h-14 w-full items-center justify-center rounded-full text-[15px] font-bold text-white shadow-[0_10px_26px_rgba(124,58,237,0.4)]"
-            style={{ background: 'linear-gradient(140deg,#B44CF6,#7C3AED)' }}
-          >
-            Save {type.toLowerCase()}
-          </Link>
-        </Surface>
+          Save expense
+        </button>
       </div>
       <div className="mt-3 text-center text-[10.5px]" style={{ color: 'var(--text-3)' }}>
         Saved &amp; synced to {members.wife.name} · quiet toast, no modal

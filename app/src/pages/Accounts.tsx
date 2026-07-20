@@ -96,7 +96,7 @@ export function Accounts() {
           <div className="mt-5.5 text-[11.5px] text-white/75">Balance</div>
           <div className="mt-0.5 text-[28px] font-extrabold tnum text-white">{formatAmount(bca.balance, 'IDR')}</div>
           <div className="mt-3.5 flex items-center justify-between">
-            <div className="text-[11.5px] text-white/80">Adit · Joint use</div>
+            <div className="text-[11.5px] text-white/80">Bas · shared use</div>
             <div className="flex">
               <div className="h-6 w-6 rounded-full bg-white/90" />
               <div className="-ml-2.5 h-6 w-6 rounded-full bg-black/45" />
@@ -113,18 +113,18 @@ export function Accounts() {
         <MoneyMapRow initial="B" color="#B79AF8" bg="rgba(180,76,246,.16)" name="BCA" sub="2 pockets" amount={formatAmount(bca.balance, 'IDR')} expandable />
         <PocketRow name="Utama" sub="daily spending" amount={formatAmount(bca.balance - bcaEmergency.balance, 'IDR')} />
         <PocketRow name="Darurat" sub="locked pocket" amount={formatAmount(bcaEmergency.balance, 'IDR')} last />
-        <MoneyMapRow initial="J" color="#F6CE45" bg="rgba(246,206,69,.14)" name="Bank Jago" sub="Nadia" amount="Rp 21.750.000" expandable chevron="right" />
+        <MoneyMapRow initial="J" color="#F6CE45" bg="rgba(246,206,69,.14)" name="Bank Jago" sub="Tere" amount="Rp 21.750.000" expandable chevron="right" />
         <MoneyMapRow
           initial="Jn"
           color="#60A5FA"
           bg="rgba(96,165,250,.14)"
           name="Jenius"
           tag="USD"
-          sub="Adit"
+          sub="Bas"
           amount="$2.850,00"
           subAmount="≈ Rp 46.312.500"
         />
-        <MoneyMapRow initial="G" color="#34D399" bg="rgba(52,211,153,.14)" name="GoPay" sub="e-money · Joint" amount="Rp 745.000" />
+        <MoneyMapRow initial="G" color="#34D399" bg="rgba(52,211,153,.14)" name="GoPay" sub="e-money · shared" amount="Rp 745.000" />
         <MoneyMapRow initial="C" color="#C9C9D1" bg="rgba(255,255,255,.07)" name="Cash" sub="wallet drawer" amount="Rp 1.200.000" last />
       </Surface>
 

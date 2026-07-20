@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Camera, Repeat, MoreHorizontal, ShoppingCart, Coffee, Car, TrendingUp, Wallet } from 'lucide-react'
+import { Plus, Camera, Repeat, MoreHorizontal, ShoppingCart, Coffee, Car, TrendingUp, Wallet, Landmark, CreditCard } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
 import { TopBar, Greeting } from '../components/TopBar'
 import { OwnerFilter, type Owner } from '../components/OwnerFilter'
+import { Carousel } from '../components/Carousel'
 import { GradientProgressBar, ProgressBar } from '../components/ProgressBar'
 import { DonutRing } from '../components/DonutRing'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { formatAmount } from '../data/currency'
-import { members, netWorth, monthlySpending, accounts, goals, portfolio, transactions, subscriptions } from '../data/mockData'
+import { members, netWorth, monthlySpending, accounts, goals, portfolio, transactions, subscriptions, cashOnHand, debtTotal } from '../data/mockData'
 
 const atRisk = [
   { name: 'Dining', percent: 92, color: '#F59E0B', icon: Coffee, note: null },
@@ -16,9 +17,9 @@ const atRisk = [
 ]
 
 const quickActions = [
-  { label: 'Add', icon: Plus, to: '/quick-add', hero: true },
+  { label: 'Add', icon: Plus, to: '/add', hero: true },
   { label: 'Scan', icon: Camera, to: '/receipt-scan' },
-  { label: 'Transfer', icon: Repeat, to: '/accounts' },
+  { label: 'Transfer', icon: Repeat, to: '/add/transfer' },
   { label: 'More', icon: MoreHorizontal, to: '/more' },
 ]
 
@@ -37,7 +38,9 @@ export function Dashboard() {
         <Greeting name={members.me.name} />
         <OwnerFilter value={owner} onChange={setOwner} />
 
-        <NetWorthCard />
+        <div className="mt-5">
+          <HeroCarousel />
+        </div>
 
         <div className="mt-5 flex justify-between px-1.5">
           {quickActions.map(({ label, icon: Icon, to, hero }) => (
@@ -134,40 +137,87 @@ export function Dashboard() {
   )
 }
 
-function NetWorthCard() {
+interface HeroSlideProps {
+  label: string
+  amount: string
+  sub: string
+  footLabel: string
+  badge: string
+  badgeColor?: string
+  gradient: string
+  icon: typeof Wallet
+}
+
+function HeroSlide({ label, amount, sub, footLabel, badge, gradient, icon: Icon }: HeroSlideProps) {
   return (
-    <div className="relative mt-5 pt-8">
-      <div
-        className="absolute left-3.5 right-3.5 top-0 flex h-16 items-start justify-end rounded-[24px] px-5 py-2.5 text-[13px] font-semibold tnum"
-        style={{ background: '#F6CE45', color: '#191400', letterSpacing: '2px' }}
-      >
-        **** 7216
+    <div
+      className="rounded-[24px] p-5 shadow-[0_16px_40px_rgba(124,58,237,0.28)]"
+      style={{ background: gradient }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="text-[12px] font-semibold text-white/85">{label}</div>
+        <div className="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-white/20">
+          <Icon size={14} strokeWidth={2} color="#fff" />
+        </div>
       </div>
-      <div
-        className="relative rounded-[24px] p-5 shadow-[0_16px_40px_rgba(124,58,237,0.35)]"
-        style={{ background: 'linear-gradient(140deg,#B44CF6,#7C3AED)' }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="text-[12px] font-semibold text-white/85">Net worth</div>
-          <div className="flex">
-            <div className="h-[22px] w-[22px] rounded-full bg-white/85" />
-            <div className="-ml-2.5 h-[22px] w-[22px] rounded-full bg-black/45" />
-          </div>
-        </div>
-        <div className="mt-2.5 text-[32px] font-extrabold tracking-[-0.5px] text-white tnum">
-          {formatAmount(netWorth.idr, 'IDR')}
-        </div>
-        <div className="mt-1 text-[11px] tnum text-white/75">
-          ≈ consolidated in IDR · FX {netWorth.fxDate}
-        </div>
-        <div className="mt-4 flex items-center justify-between">
-          <div className="text-[11.5px] text-white/80">Accounts + investments − debts</div>
-          <div className="rounded-full px-3.5 py-1.5 text-[11.5px] font-bold tnum" style={{ background: '#F5F5F7', color: '#111114' }}>
-            ↑ {netWorth.changePercent}% vs Jun
-          </div>
+      <div className="mt-2.5 text-[32px] font-extrabold tracking-[-0.5px] text-white tnum">{amount}</div>
+      <div className="mt-1 text-[11px] tnum text-white/75">{sub}</div>
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-[11.5px] text-white/80">{footLabel}</div>
+        <div className="rounded-full px-3.5 py-1.5 text-[11.5px] font-bold tnum" style={{ background: '#F5F5F7', color: '#111114' }}>
+          {badge}
         </div>
       </div>
     </div>
+  )
+}
+
+function HeroCarousel() {
+  return (
+    <Carousel>
+      {[
+        <HeroSlide
+          key="nw"
+          label="Net worth"
+          amount={formatAmount(netWorth.idr, 'IDR')}
+          sub={`≈ consolidated in IDR · FX ${netWorth.fxDate}`}
+          footLabel="Accounts + investments − debts"
+          badge={`↑ ${netWorth.changePercent}% vs Jun`}
+          gradient="linear-gradient(140deg,#B44CF6,#7C3AED)"
+          icon={TrendingUp}
+        />,
+        <HeroSlide
+          key="cash"
+          label="Cash on hand"
+          amount={formatAmount(cashOnHand.idr, 'IDR')}
+          sub={`liquid across ${cashOnHand.accountsCount} accounts`}
+          footLabel="Banks + e-money + cash"
+          badge={`↑ ${cashOnHand.changePercent}% vs Jun`}
+          gradient="linear-gradient(140deg,#2DD4BF,#0EA5A0)"
+          icon={Landmark}
+        />,
+        <HeroSlide
+          key="port"
+          label="Portfolio"
+          amount={`≈ ${formatAmount(portfolio.currentValue, 'IDR')}`}
+          sub="gold · stocks · reksadana · crypto"
+          footLabel={`+${formatAmount(portfolio.gain, 'IDR')} all-time`}
+          badge={`↑ ${portfolio.gainPercent}%`}
+          gradient="linear-gradient(140deg,#F6A93B,#EA7317)"
+          icon={TrendingUp}
+        />,
+        <HeroSlide
+          key="debt"
+          label="Total owed"
+          amount={formatAmount(debtTotal.idr, 'IDR')}
+          sub="credit cards + loans"
+          footLabel={`next due ${debtTotal.nextDue}`}
+          badge="Pay bills"
+          gradient="linear-gradient(140deg,#F87171,#DC2626)"
+          icon={CreditCard}
+        />,
+      ]}
+    </Carousel>
   )
 }
 
@@ -377,7 +427,7 @@ function DesktopDashboard({
 
       <div className="mt-6 grid grid-cols-3 gap-5">
         <div className="col-span-1 flex flex-col gap-5">
-          <NetWorthCard />
+          <HeroCarousel />
           <AtRiskCard />
         </div>
         <div className="col-span-1 flex flex-col gap-5">

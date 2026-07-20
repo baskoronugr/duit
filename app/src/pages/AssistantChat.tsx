@@ -13,7 +13,7 @@ const initialMessages: Message[] = [
   { role: 'assistant', text: '' },
 ]
 
-const suggestions = ['Show those brunches', 'Tighten Dining budget', 'Compare vs Nadia']
+const suggestions = ['Show those brunches', 'Tighten Dining budget', 'Compare vs Tere']
 
 export function AssistantChat() {
   const [messages, setMessages] = useState<Message[]>(initialMessages)

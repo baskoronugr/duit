@@ -1,10 +1,14 @@
-import { ChevronDown, Plus, ShoppingCart, Coffee, Car, Zap, Home, Heart, MoreHorizontal } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ChevronDown, Plus, ShoppingCart, Coffee, Car, Zap, Home, Heart, MoreHorizontal, Check } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
 import { ProgressBar } from '../components/ProgressBar'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { formatAmount } from '../data/currency'
 import { budgetCategories, monthlySpending } from '../data/mockData'
+
+const MONTHS = ['Apr 2026', 'May 2026', 'Jun 2026', 'July', 'Aug 2026']
 
 const iconMap: Record<string, LucideIcon> = {
   'shopping-cart': ShoppingCart,
@@ -25,16 +29,42 @@ function statusColor(percent: number) {
 export function Budgets() {
   const totalWeight = budgetCategories.reduce((s, c) => s + c.weight, 0)
   const balanced = totalWeight === 100
+  const [month, setMonth] = useState('July')
+  const [monthOpen, setMonthOpen] = useState(false)
 
   return (
     <Screen>
       <div className="flex items-center justify-between">
         <div className="text-[18px] font-extrabold">Budgets</div>
-        <div
-          className="flex items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-xs font-semibold"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
-        >
-          July <ChevronDown size={13} strokeWidth={2} />
+        <div className="relative">
+          <button
+            onClick={() => setMonthOpen((o) => !o)}
+            className="flex items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-xs font-semibold"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+          >
+            {month} <ChevronDown size={13} strokeWidth={2} />
+          </button>
+          {monthOpen && (
+            <div
+              className="absolute right-0 top-full z-20 mt-2 w-40 overflow-hidden rounded-[16px] border shadow-lg"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border-strong)' }}
+            >
+              {MONTHS.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setMonth(m)
+                    setMonthOpen(false)
+                  }}
+                  className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[12.5px]"
+                  style={{ color: m === month ? 'var(--text)' : 'var(--text-2)', fontWeight: m === month ? 700 : 400 }}
+                >
+                  {m}
+                  {m === month && <Check size={14} strokeWidth={2.4} color="var(--accent-link)" />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -121,12 +151,13 @@ export function Budgets() {
         })}
       </Surface>
 
-      <button
+      <Link
+        to="/add/budget"
         className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[18px] border border-dashed py-3.5 text-[12.5px] font-semibold"
         style={{ background: 'var(--surface)', borderColor: 'var(--border-strong)', color: 'var(--accent-link)' }}
       >
         <Plus size={15} strokeWidth={2.2} /> Add category budget
-      </button>
+      </Link>
     </Screen>
   )
 }

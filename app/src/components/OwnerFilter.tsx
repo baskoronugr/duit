@@ -1,4 +1,4 @@
-const OPTIONS = ['All', 'Me', 'Wife', 'Joint'] as const
+const OPTIONS = ['All', 'Bas', 'Tere'] as const
 export type Owner = (typeof OPTIONS)[number]
 
 export function OwnerFilter({ value, onChange }: { value: Owner; onChange: (v: Owner) => void }) {

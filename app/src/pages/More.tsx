@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom'
-import { PiggyBank, Target, TrendingUp, Sparkles, ScanLine, Settings, ChevronRight, Sun, Moon } from 'lucide-react'
+import { PiggyBank, Target, TrendingUp, Sparkles, ScanLine, Settings, ChevronRight, Sun, Moon, ArrowDownLeft, Repeat } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
 import { useTheme } from '../theme/ThemeContext'
 
 const items: { label: string; to: string; icon: LucideIcon; color: string }[] = [
+  { label: 'Income', to: '/income', icon: ArrowDownLeft, color: '#34D399' },
   { label: 'Budgets', to: '/budgets', icon: PiggyBank, color: '#B44CF6' },
-  { label: 'Goals', to: '/goals', icon: Target, color: '#34D399' },
+  { label: 'Goals', to: '/goals', icon: Target, color: '#2DD4BF' },
   { label: 'Investments', to: '/investments', icon: TrendingUp, color: '#F6CE45' },
+  { label: 'Subscriptions', to: '/subscriptions', icon: Repeat, color: '#FB923C' },
   { label: 'Ask Duit', to: '/assistant', icon: Sparkles, color: '#60A5FA' },
   { label: 'Scan receipt', to: '/receipt-scan', icon: ScanLine, color: '#2DD4BF' },
   { label: 'Rebalance proposal', to: '/reprioritize', icon: Sparkles, color: '#F472B6' },

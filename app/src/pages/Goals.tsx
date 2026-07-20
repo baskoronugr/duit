@@ -1,7 +1,10 @@
-import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Plus, PiggyBank } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
 import { DonutRing } from '../components/DonutRing'
 import { formatAmount } from '../data/currency'
+import { savingsSuggestion } from '../data/mockData'
 
 const goals = [
   {
@@ -43,13 +46,16 @@ export function Goals() {
     <Screen>
       <div className="flex items-center justify-between">
         <div className="text-[18px] font-extrabold">Goals</div>
-        <button
+        <Link
+          to="/add/goal"
           className="flex items-center gap-1.5 rounded-full px-3.5 py-2.5 text-xs font-bold"
           style={{ background: 'var(--nav-pill)', color: 'var(--nav-pill-ink)' }}
         >
           <Plus size={14} strokeWidth={2.4} /> New goal
-        </button>
+        </Link>
       </div>
+
+      <SavingsSuggestion />
 
       <Surface className="mt-4">
         <div className="flex items-baseline justify-between">
@@ -151,5 +157,53 @@ export function Goals() {
         </div>
       </div>
     </Screen>
+  )
+}
+
+function SavingsSuggestion() {
+  const [rate, setRate] = useState(savingsSuggestion.recommendedRate)
+  const suggested = Math.round((savingsSuggestion.incomeBase * rate) / 100)
+  const gap = suggested - savingsSuggestion.currentlySaving
+
+  return (
+    <div
+      className="mt-4 rounded-[24px] p-[18px]"
+      style={{ background: 'linear-gradient(140deg,#2DD4BF,#0EA5A0)' }}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+          <PiggyBank size={18} strokeWidth={2} color="#fff" />
+        </div>
+        <div className="flex-1">
+          <div className="text-[13.5px] font-extrabold text-white">Suggested savings</div>
+          <div className="text-[11px] text-white/80">based on {formatAmount(savingsSuggestion.incomeBase, 'IDR')} income</div>
+        </div>
+        <div className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-bold text-white tnum">{rate}%</div>
+      </div>
+
+      <div className="mt-3 text-[28px] font-extrabold tnum text-white">{formatAmount(suggested, 'IDR')}<span className="text-[13px] font-semibold text-white/75"> /mo</span></div>
+
+      <input
+        type="range"
+        min={5}
+        max={40}
+        value={rate}
+        onChange={(e) => setRate(Number(e.target.value))}
+        className="mt-3 w-full accent-white"
+      />
+      <div className="mt-1 flex justify-between text-[10px] text-white/70">
+        <span>5%</span>
+        <span>20% recommended</span>
+        <span>40%</span>
+      </div>
+
+      <div className="mt-3 rounded-[14px] bg-black/15 p-3 text-[11.5px] text-white/90">
+        {gap > 0 ? (
+          <>You're saving {formatAmount(savingsSuggestion.currentlySaving, 'IDR')} now — <b>{formatAmount(gap, 'IDR')} short</b> of this target.</>
+        ) : (
+          <>You're already saving {formatAmount(savingsSuggestion.currentlySaving, 'IDR')} — ahead of this target. Nice.</>
+        )}
+      </div>
+    </div>
   )
 }

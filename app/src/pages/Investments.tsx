@@ -28,7 +28,7 @@ const stocks: Row[] = [
 ]
 
 const mutualFunds: Row[] = [
-  { ticker: 'RD', name: 'Sucorinvest Money Market', detail: 'Bibit · Joint', value: 'Rp 26.960.000', changePercent: 4.8, iconBg: 'rgba(246,206,69,.14)', iconColor: '#F6CE45' },
+  { ticker: 'RD', name: 'Sucorinvest Money Market', detail: 'Bibit · Tere', value: 'Rp 26.960.000', changePercent: 4.8, iconBg: 'rgba(246,206,69,.14)', iconColor: '#F6CE45' },
 ]
 
 const crypto: Row[] = [

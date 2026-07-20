@@ -73,7 +73,7 @@ export function Reprioritize() {
           </button>
         </div>
         <div className="mt-2.5 text-center text-[10px]" style={{ color: '#5C5C66' }}>
-          nothing changes without your approval · Nadia gets a heads-up
+          nothing changes without your approval · Tere gets a heads-up
         </div>
       </div>
     </Screen>
