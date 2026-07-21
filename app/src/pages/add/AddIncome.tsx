@@ -2,19 +2,54 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AddShell, FieldLabel, Pills, OwnerToggle, SaveButton } from '../../components/AddShell'
 import { parseShorthandAmount, formatAmount } from '../../data/currency'
+import { putIncome, putTransaction, newId } from '../../data/db'
+import { useProfile } from '../../theme/ProfileContext'
+import type { IncomeEntry } from '../../data/mockData'
 
 const sources = ['Salary', 'Bonus', 'Freelance', 'Gift', 'Other']
 const accounts = ['BCA Utama', 'Jenius', 'GoPay', 'Cash']
 
 export function AddIncome() {
   const navigate = useNavigate()
+  const { active } = useProfile()
   const [amount, setAmount] = useState('28.5m')
   const [source, setSource] = useState('Salary')
   const [account, setAccount] = useState('BCA Utama')
-  const [owner, setOwner] = useState('Bas')
+  const [owner, setOwner] = useState<'Bas' | 'Tere'>(active)
   const [recurring, setRecurring] = useState(true)
 
   const parsed = parseShorthandAmount(amount)
+
+  async function save() {
+    if (parsed === null || parsed <= 0) return
+    const id = newId('inc')
+    const date = new Date().toISOString().slice(0, 10)
+    await putIncome({
+      id,
+      source: source === 'Salary' ? 'Monthly salary' : source,
+      kind: source as IncomeEntry['kind'],
+      account,
+      amount: parsed,
+      currency: 'IDR',
+      date,
+      owner,
+      recurring,
+    })
+    await putTransaction({
+      id: newId('txn'),
+      merchant: source,
+      category: 'Income',
+      categoryColor: '#34D399',
+      account,
+      amount: parsed,
+      currency: 'IDR',
+      date,
+      owner,
+      source: 'manual',
+      type: 'income',
+    })
+    navigate('/income')
+  }
 
   return (
     <AddShell title="Income">
@@ -42,7 +77,7 @@ export function AddIncome() {
       <Pills options={accounts} value={account} onChange={setAccount} />
 
       <FieldLabel>Owner</FieldLabel>
-      <OwnerToggle value={owner} onChange={setOwner} />
+      <OwnerToggle value={owner} onChange={(v) => setOwner(v as 'Bas' | 'Tere')} />
 
       <button
         onClick={() => setRecurring((r) => !r)}
@@ -66,7 +101,7 @@ export function AddIncome() {
         </div>
       </button>
 
-      <SaveButton label="Save income" onClick={() => navigate('/income')} />
+      <SaveButton label="Save income" onClick={save} />
     </AddShell>
   )
 }

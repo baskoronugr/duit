@@ -17,6 +17,8 @@ import {
 import { Screen } from '../components/Screen'
 import { parseShorthandAmount, formatAmount } from '../data/currency'
 import { members, accounts } from '../data/mockData'
+import { putTransaction, newId } from '../data/db'
+import { useProfile } from '../theme/ProfileContext'
 
 const categories = [
   { name: 'Groceries', icon: ShoppingCart, color: '#2DD4BF' },
@@ -32,6 +34,7 @@ const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'k', '0', 'back']
 
 export function QuickAdd() {
   const navigate = useNavigate()
+  const { active } = useProfile()
   const [raw, setRaw] = useState('45k')
   const [category, setCategory] = useState('Groceries')
   const [account, setAccount] = useState('BCA Utama')
@@ -45,6 +48,25 @@ export function QuickAdd() {
     } else {
       setRaw((r) => (r + k).slice(0, 10))
     }
+  }
+
+  async function save() {
+    if (parsed === null || parsed <= 0) return
+    const cat = categories.find((c) => c.name === category)
+    await putTransaction({
+      id: newId('txn'),
+      merchant: note.trim() || category,
+      category,
+      categoryColor: cat?.color ?? '#8E8E99',
+      account,
+      amount: -parsed,
+      currency: 'IDR',
+      date: new Date().toISOString().slice(0, 10),
+      owner: active,
+      source: 'manual',
+      type: 'expense',
+    })
+    navigate('/transactions')
   }
 
   return (
@@ -193,7 +215,7 @@ export function QuickAdd() {
           </div>
         </Link>
         <button
-          onClick={() => navigate('/transactions')}
+          onClick={save}
           className="flex h-14 flex-1 items-center justify-center rounded-full text-[15px] font-bold text-white shadow-[0_10px_26px_rgba(124,58,237,0.4)]"
           style={{ background: 'linear-gradient(140deg,#B44CF6,#7C3AED)' }}
         >

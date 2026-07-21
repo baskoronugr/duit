@@ -3,9 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Sparkles } from 'lucide-react'
 import { AddShell, FieldLabel, TextInput, Pills, SaveButton } from '../../components/AddShell'
 import { parseShorthandAmount, formatAmount } from '../../data/currency'
-import { budgetCategories } from '../../data/mockData'
+import { putBudget, newId } from '../../data/db'
+import { useCollection } from '../../data/useCollection'
+import type { BudgetCategory } from '../../data/mockData'
 
 const suggestedCategories = ['Groceries', 'Dining', 'Transport', 'Utilities', 'Fun', 'Health', 'Home', 'Custom…']
+const CAT_COLORS = ['#2DD4BF', '#60A5FA', '#F472B6', '#FB923C', '#A78BFA', '#F87171', '#F6CE45']
 
 export function AddBudget() {
   const navigate = useNavigate()
@@ -15,8 +18,24 @@ export function AddBudget() {
   const [weight, setWeight] = useState(10)
 
   const parsed = parseShorthandAmount(amount)
+  const { items: budgetCategories } = useCollection<BudgetCategory>('budget')
   const existingWeight = budgetCategories.reduce((s, c) => s + c.weight, 0)
   const newTotal = existingWeight + weight
+
+  async function save() {
+    const name = category === 'Custom…' ? custom.trim() : category
+    if (!name || parsed === null || parsed <= 0) return
+    await putBudget({
+      id: newId('budget'),
+      name,
+      icon: 'more-horizontal',
+      color: CAT_COLORS[name.length % CAT_COLORS.length],
+      weight,
+      spent: 0,
+      budget: parsed,
+    })
+    navigate('/budgets')
+  }
 
   return (
     <AddShell title="Add budget">
@@ -74,7 +93,7 @@ export function AddBudget() {
         {newTotal === 100 ? '— balanced' : '— adjust others to reach 100%'}
       </div>
 
-      <SaveButton label="Add budget" onClick={() => navigate('/budgets')} />
+      <SaveButton label="Add budget" onClick={save} />
     </AddShell>
   )
 }

@@ -10,7 +10,8 @@ import { DonutRing } from '../components/DonutRing'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { formatAmount } from '../data/currency'
 import { useProfile } from '../theme/ProfileContext'
-import { netWorth, monthlySpending, accounts, goals, portfolio, transactions, subscriptions, cashOnHand, debtTotal } from '../data/mockData'
+import { useCollection } from '../data/useCollection'
+import { netWorth, monthlySpending, accounts, goals, portfolio, cashOnHand, debtTotal, type Transaction, type Subscription } from '../data/mockData'
 
 function Hidden({ children, revealed }: { children: React.ReactNode; revealed: boolean }) {
   return (
@@ -359,11 +360,13 @@ function AtRiskCard() {
 }
 
 function RenewalsCard() {
+  const { items: subs } = useCollection<Subscription>('subscription')
+  const subscriptions = [...subs].sort((a, b) => a.renewsInDays - b.renewsInDays)
   return (
     <Surface className="mt-4">
       <div className="flex items-baseline justify-between">
         <div className="text-[14px] font-bold">Upcoming renewals</div>
-        <Link to="/budgets" className="text-[11.5px]" style={{ color: 'var(--accent-link)' }}>
+        <Link to="/subscriptions" className="text-[11.5px]" style={{ color: 'var(--accent-link)' }}>
           All
         </Link>
       </div>
@@ -410,6 +413,8 @@ function RenewalsCard() {
 }
 
 function RecentTransactionsCard() {
+  const { items } = useCollection<Transaction>('transaction')
+  const transactions = [...items].sort((a, b) => (a.date < b.date ? 1 : -1))
   return (
     <Surface className="mt-4">
       <div className="flex items-baseline justify-between">

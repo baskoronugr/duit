@@ -1,82 +1,119 @@
 import PouchDB from 'pouchdb-browser'
-import { accounts as seedAccounts, type Account } from './mockData'
+import {
+  accounts as seedAccounts,
+  transactions as seedTransactions,
+  budgetCategories as seedBudgets,
+  goals as seedGoals,
+  holdings as seedHoldings,
+  subscriptions as seedSubs,
+  incomeEntries as seedIncome,
+  type Account,
+  type Transaction,
+  type BudgetCategory,
+  type Goal,
+  type Holding,
+  type Subscription,
+  type IncomeEntry,
+} from './mockData'
 
 /**
  * Local-first data layer.
  *
- * All reads/writes hit a local PouchDB (IndexedDB) so the app works fully
+ * Every read/write hits a local PouchDB (IndexedDB) so the app works fully
  * offline. When a hub URL is configured (the household PC), we run live
- * bidirectional replication to it — sync happens whenever the PC is reachable
- * on the home WiFi. See PRD v3.0 §3.
+ * bidirectional replication to it. See PRD v3.0 §3.
+ *
+ * Documents are keyed `${docType}:${id}` and carry a `docType` field.
  */
 
 export const db = new PouchDB('duit')
 
 const HUB_KEY = 'duit-hub-url'
-const SEED_FLAG = '_local/seeded-v1'
 
 export function getHubUrl(): string {
   return localStorage.getItem(HUB_KEY) ?? ''
 }
-
 export function setHubUrl(url: string) {
   localStorage.setItem(HUB_KEY, url.trim().replace(/\/+$/, ''))
 }
 
-// ---- document model -------------------------------------------------------
+export type DocType = 'account' | 'transaction' | 'budget' | 'goal' | 'holding' | 'subscription' | 'income'
 
-export interface AccountDoc extends Account {
-  _id: string // `account:<id>`
-  _rev?: string
-  docType: 'account'
+export type BaseDoc = { _id: string; _rev?: string; docType: DocType; id: string }
+export type Stored<T> = T & BaseDoc
+
+export function newId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-function toDoc(a: Account): AccountDoc {
-  return { ...a, _id: `account:${a.id}`, docType: 'account' }
-}
+// ---- generic CRUD ---------------------------------------------------------
 
-// ---- seeding --------------------------------------------------------------
-
-/** One-time load of the mock accounts so a fresh device isn't empty. Idempotent. */
-export async function seedIfEmpty(): Promise<void> {
-  try {
-    await db.get(SEED_FLAG)
-    return // already seeded
-  } catch {
-    // not seeded yet
-  }
-  const docs = seedAccounts.map(toDoc)
-  await db.bulkDocs(docs)
-  await db.put({ _id: SEED_FLAG } as PouchDB.Core.PutDocument<object>)
-}
-
-// ---- accounts CRUD --------------------------------------------------------
-
-export async function listAccounts(): Promise<AccountDoc[]> {
-  const res = await db.allDocs<AccountDoc>({
+export async function listByType<T extends { id: string }>(docType: DocType): Promise<Stored<T>[]> {
+  const res = await db.allDocs<Stored<T>>({
     include_docs: true,
-    startkey: 'account:',
-    endkey: 'account:￰',
+    startkey: `${docType}:`,
+    endkey: `${docType}:￰`,
   })
   return res.rows.map((r) => r.doc!).filter(Boolean)
 }
 
-export async function putAccount(a: Account): Promise<void> {
-  const _id = `account:${a.id}`
+export async function putEntity<T extends { id: string }>(docType: DocType, entity: T): Promise<void> {
+  const _id = `${docType}:${entity.id}`
   let _rev: string | undefined
   try {
-    const existing = await db.get<AccountDoc>(_id)
-    _rev = existing._rev
+    _rev = (await db.get(_id))._rev
   } catch {
-    // new doc
+    /* new doc */
   }
-  await db.put({ ...toDoc(a), ...(_rev ? { _rev } : {}) })
+  await db.put({ ...entity, _id, docType, ...(_rev ? { _rev } : {}) })
 }
 
-export async function deleteAccount(id: string): Promise<void> {
-  const doc = await db.get<AccountDoc>(`account:${id}`)
+export async function removeEntity(docType: DocType, id: string): Promise<void> {
+  const doc = await db.get(`${docType}:${id}`)
   await db.remove(doc)
 }
+
+// ---- seeding --------------------------------------------------------------
+
+async function seedCollection<T extends { id: string }>(docType: DocType, rows: T[]): Promise<void> {
+  const existing = await listByType<T>(docType)
+  if (existing.length > 0) return
+  await db.bulkDocs(rows.map((r) => ({ ...r, _id: `${docType}:${r.id}`, docType })))
+}
+
+/** Idempotently seed each collection from the mock data if it's empty. */
+export async function seedIfEmpty(): Promise<void> {
+  await seedCollection('account', seedAccounts)
+  await seedCollection('transaction', seedTransactions)
+  await seedCollection('budget', seedBudgets)
+  await seedCollection('goal', seedGoals)
+  await seedCollection('holding', seedHoldings)
+  await seedCollection('subscription', seedSubs)
+  await seedCollection('income', seedIncome)
+}
+
+// ---- typed helpers --------------------------------------------------------
+
+export const listAccounts = () => listByType<Account>('account')
+export const putAccount = (a: Account) => putEntity('account', a)
+export const deleteAccount = (id: string) => removeEntity('account', id)
+
+export const listTransactions = () => listByType<Transaction>('transaction')
+export const putTransaction = (t: Transaction) => putEntity('transaction', t)
+
+export const listBudgets = () => listByType<BudgetCategory>('budget')
+export const putBudget = (b: BudgetCategory) => putEntity('budget', b)
+
+export const listGoals = () => listByType<Goal>('goal')
+export const putGoal = (g: Goal) => putEntity('goal', g)
+
+export const listHoldings = () => listByType<Holding>('holding')
+
+export const listSubscriptions = () => listByType<Subscription>('subscription')
+export const putSubscription = (s: Subscription) => putEntity('subscription', s)
+
+export const listIncome = () => listByType<IncomeEntry>('income')
+export const putIncome = (i: IncomeEntry) => putEntity('income', i)
 
 // ---- sync -----------------------------------------------------------------
 
@@ -84,10 +121,6 @@ export type SyncState = 'offline' | 'connecting' | 'synced' | 'syncing' | 'error
 
 let handler: PouchDB.Replication.Sync<object> | null = null
 
-/**
- * Start live two-way replication with the hub. Returns a stop() function.
- * onState reports connection/sync status for the UI badge.
- */
 export function startSync(onState: (s: SyncState) => void, onChange?: () => void): () => void {
   const url = getHubUrl()
   if (!url) {
@@ -119,7 +152,6 @@ export function stopSync() {
   }
 }
 
-/** Quick reachability probe against the hub's health endpoint. */
 export async function pingHub(): Promise<boolean> {
   const url = getHubUrl()
   if (!url) return false

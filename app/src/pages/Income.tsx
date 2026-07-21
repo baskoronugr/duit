@@ -3,11 +3,16 @@ import { Plus, TrendingUp, Repeat } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { formatAmount } from '../data/currency'
-import { incomeEntries, incomeThisMonth } from '../data/mockData'
+import { useCollection } from '../data/useCollection'
+import { toIdr } from '../data/derive'
+import type { IncomeEntry } from '../data/mockData'
 
 export function Income() {
-  const salary = incomeEntries.filter((i) => i.kind === 'Salary').reduce((s, i) => s + i.amount, 0)
-  const other = incomeThisMonth.idr - salary
+  const { items: incomeEntries } = useCollection<IncomeEntry>('income')
+  const totalIdr = incomeEntries.reduce((s, i) => s + toIdr(i.amount, i.currency), 0)
+  const salary = incomeEntries.filter((i) => i.kind === 'Salary').reduce((s, i) => s + toIdr(i.amount, i.currency), 0)
+  const other = totalIdr - salary
+  const incomeThisMonth = { idr: totalIdr }
 
   return (
     <Screen>

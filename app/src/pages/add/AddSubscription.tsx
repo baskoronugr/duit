@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AddShell, FieldLabel, TextInput, Pills, OwnerToggle, SaveButton } from '../../components/AddShell'
 import { parseShorthandAmount, formatAmount, type CurrencyCode } from '../../data/currency'
+import { putSubscription, newId } from '../../data/db'
 
 const cycles = ['Monthly', 'Quarterly', 'Yearly']
 const currencies: CurrencyCode[] = ['IDR', 'USD', 'JPY', 'SGD', 'CNY']
@@ -20,6 +21,25 @@ export function AddSubscription() {
   const [owner, setOwner] = useState('Bas')
 
   const parsed = parseShorthandAmount(amount)
+
+  async function save() {
+    if (!name.trim() || parsed === null || parsed <= 0) return
+    const renewsInDays = nextDate
+      ? Math.max(0, Math.round((new Date(nextDate).getTime() - Date.now()) / 86_400_000))
+      : 30
+    const palette = ['#F87171', '#60A5FA', '#34D399', '#FB923C', '#A78BFA']
+    await putSubscription({
+      id: newId('sub'),
+      name: name.trim(),
+      initial: name.trim()[0].toUpperCase(),
+      color: palette[name.length % palette.length],
+      amount: parsed,
+      currency,
+      renewsInDays,
+      owner: owner as 'Bas' | 'Tere',
+    })
+    navigate('/subscriptions')
+  }
 
   return (
     <AddShell title="Subscription">
@@ -75,7 +95,7 @@ export function AddSubscription() {
       <FieldLabel>Owner</FieldLabel>
       <OwnerToggle value={owner} onChange={setOwner} />
 
-      <SaveButton label="Save subscription" onClick={() => navigate('/subscriptions')} />
+      <SaveButton label="Save subscription" onClick={save} />
     </AddShell>
   )
 }

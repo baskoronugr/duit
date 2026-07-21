@@ -3,15 +3,36 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowDown } from 'lucide-react'
 import { AddShell, FieldLabel, SaveButton } from '../../components/AddShell'
 import { parseShorthandAmount, formatAmount } from '../../data/currency'
+import { putTransaction, newId } from '../../data/db'
+import { useProfile } from '../../theme/ProfileContext'
 
 const accounts = ['BCA Utama', 'Emergency pocket', 'Trip Jepang pocket', 'Jenius', 'GoPay', 'Cash', 'BCA Visa']
 
 export function AddTransfer() {
   const navigate = useNavigate()
+  const { active } = useProfile()
   const [from, setFrom] = useState('BCA Utama')
   const [to, setTo] = useState('Emergency pocket')
   const [amount, setAmount] = useState('3m')
   const parsed = parseShorthandAmount(amount)
+
+  async function save() {
+    if (parsed === null || parsed <= 0 || from === to) return
+    await putTransaction({
+      id: newId('txn'),
+      merchant: `To ${to}`,
+      category: 'Transfer',
+      categoryColor: '#A78BFA',
+      account: from,
+      amount: parsed,
+      currency: 'IDR',
+      date: new Date().toISOString().slice(0, 10),
+      owner: active,
+      source: 'manual',
+      type: 'transfer',
+    })
+    navigate('/transactions')
+  }
 
   return (
     <AddShell title="Transfer">
@@ -51,7 +72,7 @@ export function AddTransfer() {
         Transfers move money between your own accounts — they never count as spending.
       </div>
 
-      <SaveButton label="Transfer money" onClick={() => navigate('/accounts')} />
+      <SaveButton label="Transfer money" onClick={save} />
     </AddShell>
   )
 }

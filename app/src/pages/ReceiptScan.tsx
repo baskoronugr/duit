@@ -3,14 +3,27 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Trash2, Sparkles, ShoppingCart, AlertTriangle, Camera, Upload, Check } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
 import { parseShorthandAmount, formatAmount } from '../data/currency'
+import { putTransaction, newId } from '../data/db'
+import { useProfile } from '../theme/ProfileContext'
 
 type Stage = 'capture' | 'review'
 
 const accountsList = ['BCA Utama', 'GoPay', 'Cash', 'BCA Visa', 'Jenius']
 const categoriesList = ['Groceries', 'Dining', 'Transport', 'Utilities', 'Fun', 'Health', 'Home']
 
+const CAT_COLOR: Record<string, string> = {
+  Groceries: '#2DD4BF',
+  Dining: '#60A5FA',
+  Transport: '#F472B6',
+  Utilities: '#FB923C',
+  Fun: '#A78BFA',
+  Health: '#F87171',
+  Home: '#F6CE45',
+}
+
 export function ReceiptScan() {
   const navigate = useNavigate()
+  const { active } = useProfile()
   const fileRef = useRef<HTMLInputElement>(null)
   const [stage, setStage] = useState<Stage>('capture')
   const [image, setImage] = useState<string | null>(null)
@@ -158,7 +171,23 @@ export function ReceiptScan() {
       </div>
 
       <button
-        onClick={() => navigate('/transactions')}
+        onClick={async () => {
+          const parsed = parseShorthandAmount(amount.replace(/[^\d.,km]/gi, '')) ?? 0
+          await putTransaction({
+            id: newId('txn'),
+            merchant,
+            category,
+            categoryColor: CAT_COLOR[category] ?? '#8E8E99',
+            account,
+            amount: -Math.abs(parsed),
+            currency: 'IDR',
+            date: new Date().toISOString().slice(0, 10),
+            owner: active,
+            source: 'screenshot',
+            type: 'expense',
+          })
+          navigate('/transactions')
+        }}
         className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-full text-[14px] font-bold text-white shadow-[0_10px_26px_rgba(124,58,237,0.4)]"
         style={{ background: 'linear-gradient(140deg,#B44CF6,#7C3AED)' }}
       >

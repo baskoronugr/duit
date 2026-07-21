@@ -6,7 +6,8 @@ import { Screen, Surface } from '../components/Screen'
 import { ProgressBar } from '../components/ProgressBar'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { formatAmount } from '../data/currency'
-import { budgetCategories, monthlySpending } from '../data/mockData'
+import { useCollection } from '../data/useCollection'
+import type { BudgetCategory } from '../data/mockData'
 
 const MONTHS = ['Apr 2026', 'May 2026', 'Jun 2026', 'July', 'Aug 2026']
 
@@ -27,10 +28,19 @@ function statusColor(percent: number) {
 }
 
 export function Budgets() {
+  const { items: budgetCategories } = useCollection<BudgetCategory>('budget')
   const totalWeight = budgetCategories.reduce((s, c) => s + c.weight, 0)
   const balanced = totalWeight === 100
   const [month, setMonth] = useState('July')
   const [monthOpen, setMonthOpen] = useState(false)
+  const monthlySpending = {
+    spent: budgetCategories.reduce((s, c) => s + c.spent, 0),
+    budget: budgetCategories.reduce((s, c) => s + c.budget, 0),
+    percent: 0,
+  }
+  monthlySpending.percent = monthlySpending.budget
+    ? Math.round((monthlySpending.spent / monthlySpending.budget) * 100)
+    : 0
 
   return (
     <Screen>

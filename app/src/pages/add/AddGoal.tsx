@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AddShell, FieldLabel, TextInput, Pills, OwnerToggle, SaveButton } from '../../components/AddShell'
 import { parseShorthandAmount, formatAmount } from '../../data/currency'
-import { goals } from '../../data/mockData'
+import { putGoal, newId } from '../../data/db'
+import { useCollection } from '../../data/useCollection'
+import type { Goal } from '../../data/mockData'
 
 const pockets = ['New pocket', 'Trip Jepang pocket', 'Emergency pocket', 'BCA Utama']
 
@@ -16,8 +18,26 @@ export function AddGoal() {
   const [pocket, setPocket] = useState('New pocket')
 
   const parsed = parseShorthandAmount(target)
+  const { items: goals } = useCollection<Goal>('goal')
   const existingWeight = goals.reduce((s, g) => s + g.weight, 0)
   const newTotal = existingWeight + weight
+
+  async function save() {
+    if (!name.trim() || parsed === null || parsed <= 0) return
+    await putGoal({
+      id: newId('goal'),
+      name: name.trim(),
+      owner: owner as 'Bas' | 'Tere',
+      weight,
+      target: parsed,
+      saved: 0,
+      currency: 'IDR',
+      status: 'on-track',
+      statusText: targetDate ? `target ${targetDate}` : 'just started',
+      color: '#34D399',
+    })
+    navigate('/goals')
+  }
 
   return (
     <AddShell title="New goal">
@@ -73,7 +93,7 @@ export function AddGoal() {
       <FieldLabel>Save into</FieldLabel>
       <Pills options={pockets} value={pocket} onChange={setPocket} />
 
-      <SaveButton label="Create goal" onClick={() => navigate('/goals')} />
+      <SaveButton label="Create goal" onClick={save} />
     </AddShell>
   )
 }

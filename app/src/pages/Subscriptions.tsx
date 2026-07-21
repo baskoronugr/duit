@@ -2,13 +2,14 @@ import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
 import { formatAmount } from '../data/currency'
-import { subscriptions } from '../data/mockData'
-
-// rough IDR-equivalent monthly total (USD subs ×~16.25k)
-const monthlyIdr = subscriptions.reduce((s, x) => s + (x.currency === 'IDR' ? x.amount : x.amount * 16_250), 0)
+import { useCollection } from '../data/useCollection'
+import { toIdr } from '../data/derive'
+import type { Subscription } from '../data/mockData'
 
 export function Subscriptions() {
-  const sorted = [...subscriptions].sort((a, b) => a.renewsInDays - b.renewsInDays)
+  const { items } = useCollection<Subscription>('subscription')
+  const sorted = [...items].sort((a, b) => a.renewsInDays - b.renewsInDays)
+  const monthlyIdr = items.reduce((s, x) => s + toIdr(x.amount, x.currency), 0)
 
   return (
     <Screen>
@@ -32,13 +33,18 @@ export function Subscriptions() {
           ≈ {formatAmount(Math.round(monthlyIdr), 'IDR')}
         </div>
         <div className="mt-1 text-[11px] tnum text-white/80">
-          ≈ {formatAmount(Math.round(monthlyIdr * 12), 'IDR')} / year · {subscriptions.length} active
+          ≈ {formatAmount(Math.round(monthlyIdr * 12), 'IDR')} / year · {items.length} active
         </div>
       </div>
 
       <div className="mt-5 text-[12px] font-bold uppercase tracking-[1px]" style={{ color: 'var(--text-3)' }}>
         Upcoming renewals
       </div>
+      {sorted.length === 0 && (
+        <div className="mt-8 text-center text-[13px]" style={{ color: 'var(--text-3)' }}>
+          No subscriptions yet.
+        </div>
+      )}
       <Surface className="mt-2 !px-[18px] !py-1">
         {sorted.map((s, i) => (
           <div
