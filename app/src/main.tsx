@@ -5,14 +5,17 @@ import './index.css'
 import App from './App.tsx'
 import { ThemeProvider } from './theme/ThemeContext.tsx'
 import { ProfileProvider } from './theme/ProfileContext.tsx'
+import { SyncProvider } from './data/SyncContext.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <ProfileProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <SyncProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </SyncProvider>
       </ProfileProvider>
     </ThemeProvider>
   </StrictMode>,

@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Plus, Landmark, CreditCard, Wallet, Layers, Banknote, Check, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Screen, Surface } from '../components/Screen'
+import { SyncSection } from '../components/SyncSection'
 import { formatAmount, type CurrencyCode } from '../data/currency'
-import { accounts as seedAccounts, type Account } from '../data/mockData'
+import { type Account } from '../data/mockData'
+import { listAccounts, putAccount } from '../data/db'
+import { useSync } from '../data/SyncContext'
 
 const TYPES: { value: Account['type']; label: string; icon: LucideIcon; color: string }[] = [
   { value: 'bank', label: 'Bank', icon: Landmark, color: '#60A5FA' },
@@ -21,7 +24,8 @@ function typeMeta(t: Account['type']) {
 }
 
 export function Settings() {
-  const [accounts, setAccounts] = useState<Account[]>(seedAccounts)
+  const { changeTick } = useSync()
+  const [accounts, setAccounts] = useState<Account[]>([])
   const [adding, setAdding] = useState(false)
 
   // form state
@@ -33,25 +37,34 @@ export function Settings() {
 
   const banks = accounts.filter((a) => a.type === 'bank')
 
-  function save() {
+  async function refresh() {
+    const docs = await listAccounts()
+    setAccounts(docs.map(({ _id, _rev, docType, ...a }) => { void _id; void _rev; void docType; return a }))
+  }
+
+  // Load from the local DB, and refetch whenever a sync change arrives.
+  useEffect(() => {
+    refresh()
+  }, [changeTick])
+
+  async function save() {
     if (!name.trim()) return
     const meta = typeMeta(type)
-    setAccounts((list) => [
-      ...list,
-      {
-        id: `${type}-${Date.now()}`,
-        name: name.trim(),
-        institution: name.trim(),
-        masked: '',
-        type,
-        currency,
-        balance: 0,
-        owner,
-        color: meta.color,
-        ...(type === 'pocket' && parentId ? { parentId } : {}),
-        ...(type === 'credit_card' ? { creditLimit: 0 } : {}),
-      },
-    ])
+    const account: Account = {
+      id: `${type}-${Date.now()}`,
+      name: name.trim(),
+      institution: name.trim(),
+      masked: '',
+      type,
+      currency,
+      balance: 0,
+      owner,
+      color: meta.color,
+      ...(type === 'pocket' && parentId ? { parentId } : {}),
+      ...(type === 'credit_card' ? { creditLimit: 0 } : {}),
+    }
+    await putAccount(account)
+    await refresh()
     setName('')
     setParentId('')
     setAdding(false)
@@ -75,6 +88,8 @@ export function Settings() {
       <div className="mt-1.5 text-center text-[12px]" style={{ color: 'var(--text-3)' }}>
         Add and name your banks, cards, pockets and e-money.
       </div>
+
+      <SyncSection />
 
       {/* existing accounts */}
       <div className="mt-5 text-[12px] font-bold uppercase tracking-[1px]" style={{ color: 'var(--text-3)' }}>

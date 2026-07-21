@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, Check, Eye, EyeOff } from 'lucide-react'
 import { useProfile, type ActiveMember } from '../theme/ProfileContext'
+import { SyncBadge } from './SyncBadge'
 
 /**
  * Dashboard header. Replaces the old avatar + bell circles. The name is tappable
@@ -35,14 +36,17 @@ export function ProfileHeader({
           </div>
         </button>
 
-        <button
-          onClick={onToggleReveal}
-          aria-label={revealed ? 'Hide amounts' : 'Show amounts'}
-          className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
-        >
-          {revealed ? <Eye size={18} strokeWidth={1.8} /> : <EyeOff size={18} strokeWidth={1.8} />}
-        </button>
+        <div className="mt-1 flex shrink-0 items-center gap-2">
+          <SyncBadge />
+          <button
+            onClick={onToggleReveal}
+            aria-label={revealed ? 'Hide amounts' : 'Show amounts'}
+            className="flex h-11 w-11 items-center justify-center rounded-full border"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+          >
+            {revealed ? <Eye size={18} strokeWidth={1.8} /> : <EyeOff size={18} strokeWidth={1.8} />}
+          </button>
+        </div>
       </div>
 
       {open && (

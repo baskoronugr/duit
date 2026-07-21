@@ -4,6 +4,21 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  define: {
+    // PouchDB and some transitive deps expect a Node-style `global`.
+    global: 'globalThis',
+  },
+  resolve: {
+    alias: {
+      // pouchdb-browser does `class … extends EventEmitter`; without a real
+      // shim Vite externalizes node's `events` to an empty object and the
+      // class extension throws. Point it at the browser-friendly npm package.
+      events: 'events',
+    },
+  },
+  optimizeDeps: {
+    include: ['pouchdb-browser', 'events'],
+  },
   plugins: [
     react(),
     tailwindcss(),
